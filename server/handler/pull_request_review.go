@@ -67,21 +67,21 @@ func (h *PullRequestReview) Handle(ctx context.Context, eventType, deliveryID st
 	if err != nil {
 		return err
 	}
-	if evaluator == nil {
-		return nil
+	if evaluator != nil {
+		if !h.affectsApproval(event.GetReview(), evalCtx.Config.Config) {
+			logger.Debug().Msg("Skipping evaluation because this review does not impact approval")
+			return nil
+		}
+
+		result, err := evalCtx.EvaluatePolicy(ctx, evaluator)
+		if err != nil {
+			return err
+		}
+
+		evalCtx.RunPostEvaluateActions(ctx, result, common.TriggerReview)
 	}
 
-	if !h.affectsApproval(event.GetReview(), evalCtx.Config.Config) {
-		logger.Debug().Msg("Skipping evaluation because this review does not impact approval")
-		return nil
-	}
-
-	result, err := evalCtx.EvaluatePolicy(ctx, evaluator)
-	if err != nil {
-		return err
-	}
-
-	evalCtx.RunPostEvaluateActions(ctx, result, common.TriggerReview)
+	h.evaluateStackDestination(ctx, evalCtx, common.TriggerReview)
 	return nil
 }
 

@@ -717,6 +717,37 @@ func TestLatestStatuses(t *testing.T) {
 	assert.Equal(t, statuses["check-run-b"], "failure", "incorrect conclusion for 'check-run-b' status")
 }
 
+func TestStack(t *testing.T) {
+	rp := &ResponsePlayer{}
+	rp.AddRule(
+		GraphQLNodePrefixMatcher("repository.pullRequest.stack"),
+		"testdata/responses/pull_stack.yml",
+	)
+
+	ctx := makeContext(t, rp, nil, nil)
+
+	stack, err := ctx.(StackContext).Stack()
+	require.NoError(t, err)
+	require.NotNil(t, stack, "expected the PR to be in a stack")
+	assert.Equal(t, "main", stack.Destination)
+	assert.Equal(t, 3, stack.Position)
+	assert.Equal(t, 4, stack.Size)
+}
+
+func TestStackNotStacked(t *testing.T) {
+	rp := &ResponsePlayer{}
+	rp.AddRule(
+		GraphQLNodePrefixMatcher("repository.pullRequest.stack"),
+		"testdata/responses/pull_stack_none.yml",
+	)
+
+	ctx := makeContext(t, rp, nil, nil)
+
+	stack, err := ctx.(StackContext).Stack()
+	require.NoError(t, err)
+	assert.Nil(t, stack, "expected nil for a PR not in a stack")
+}
+
 func makeContext(t *testing.T, rp *ResponsePlayer, pr *github.PullRequest, gc GlobalCache) Context {
 	ctx := context.Background()
 	baseURL := "http://github.localhost/"

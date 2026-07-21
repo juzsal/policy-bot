@@ -42,6 +42,11 @@ type EvalContext struct {
 	PullContext pull.Context
 	Config      FetchedConfig
 
+	// Secondary marks a status that is not the pull request's primary status,
+	// such as the stack destination status. A secondary status does not post
+	// the branch-independent insecure context.
+	Secondary bool
+
 	// If true, store statuses in the Status field instead of posting them to
 	// GitHub. Only the last status is saved, so when this option is enabled,
 	// callers should check for a non-nil status after each method call.
@@ -66,6 +71,20 @@ func (ec *EvalContext) Evaluate(ctx context.Context, trigger common.Trigger) err
 
 	ec.RunPostEvaluateActions(ctx, result, trigger)
 	return nil
+}
+
+// EvaluateForStatus posts a status from evaluating the policy but runs no
+// post-evaluate actions. It backs the secondary stack destination status.
+func (ec *EvalContext) EvaluateForStatus(ctx context.Context, trigger common.Trigger) error {
+	evaluator, err := ec.ParseConfig(ctx, trigger)
+	if err != nil {
+		return err
+	}
+	if evaluator == nil {
+		return nil
+	}
+	_, err = ec.EvaluatePolicy(ctx, evaluator)
+	return err
 }
 
 // ParseConfig checks and validates the configuration in the EvalContext and
@@ -212,7 +231,7 @@ func (ec *EvalContext) PostStatus(ctx context.Context, state, message string) {
 	if err := PostStatus(ctx, ec.Client, owner, repo, sha, status); err != nil {
 		logger.Err(err).Msg("Failed to post repo status")
 	}
-	if ec.Options.PostInsecureStatusChecks {
+	if ec.Options.PostInsecureStatusChecks && !ec.Secondary {
 		status.Context = new(ec.Options.StatusCheckContext)
 		if err := PostStatus(ctx, ec.Client, owner, repo, sha, status); err != nil {
 			logger.Err(err).Msg("Failed to post insecure repo status")

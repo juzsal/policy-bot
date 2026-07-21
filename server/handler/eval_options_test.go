@@ -77,6 +77,12 @@ func TestPullEvaluationOptions_SetValuesFromEnv(t *testing.T) {
 				opts.PostInsecureStatusChecks = true
 			},
 		},
+		"PostStackDestinationStatus": {
+			Env: map[string]string{"PEO_POST_STACK_DESTINATION_STATUS": "true"},
+			SetExpected: func(opts *PullEvaluationOptions) {
+				opts.PostStackDestinationStatus = true
+			},
+		},
 		"IgnoreEditedComments": {
 			Env: map[string]string{"PEO_IGNORE_EDITED_COMMENTS": "true"},
 			SetExpected: func(opts *PullEvaluationOptions) {

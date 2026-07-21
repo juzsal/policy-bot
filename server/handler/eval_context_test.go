@@ -46,6 +46,15 @@ func TestParseConfigPostsStatusForSeenPolicy(t *testing.T) {
 	assert.Equal(t, "Error loading policy from testorg/testrepo@main", ec.Status.GetDescription())
 }
 
+func TestEvaluateForStatusPostsStatus(t *testing.T) {
+	ec := makeEvalContext(true)
+
+	err := ec.EvaluateForStatus(context.Background(), common.TriggerAll)
+	require.Error(t, err)
+	require.NotNil(t, ec.Status)
+	assert.Equal(t, "policy-bot: main", ec.Status.GetContext())
+}
+
 func makeEvalContext(seenPolicy bool) *EvalContext {
 	return &EvalContext{
 		Options: &PullEvaluationOptions{

@@ -81,6 +81,9 @@ type Context struct {
 	RepositoryCustomPropertiesValue map[string]pull.CustomProperty
 	RepositoryCustomPropertiesError error
 
+	StackValue *pull.StackInfo
+	StackError error
+
 	Draft bool
 }
 
@@ -111,6 +114,10 @@ func (c *Context) Number() int {
 		return c.NumberValue
 	}
 	return 1
+}
+
+func (c *Context) Stack() (*pull.StackInfo, error) {
+	return c.StackValue, c.StackError
 }
 
 func (c *Context) Title() string {

@@ -122,6 +122,13 @@ sessions:
 #   # POLICYBOT_OPTIONS_STATUS_CHECK_CONTEXT environment variable.
 #   status_check_context: policy-bot
 #
+#   # If true, also post a status named after the stack destination (for
+#   # example "policy-bot: main") on the upper members of a GitHub native
+#   # stack, evaluated against the destination branch's policy. This lets
+#   # GitHub's "merge as a stack" pass. Off by default. Can also be set by the
+#   # POLICYBOT_OPTIONS_POST_STACK_DESTINATION_STATUS environment variable.
+#   post_stack_destination_status: false
+#
 #   # If true, expand teams, organizations, and permissions in the detils UI to
 #   # a list of users. This option has security implications; see the README.
 #   # Can also be set by the POLICYBOT_OPTIONS_EXPAND_REQUIRED_REVIEWERS

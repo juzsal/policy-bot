@@ -1,0 +1,18 @@
+- status: 200
+  body: |
+    {
+      "errors": [],
+      "data": {
+        "repository": {
+          "pullRequest": {
+            "stackEntry": {
+              "position": 3
+            },
+            "stack": {
+              "baseRefName": "main",
+              "size": 4
+            }
+          }
+        }
+      }
+    }

@@ -88,21 +88,21 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 	if err != nil {
 		return err
 	}
-	if evaluator == nil {
-		return nil
+	if evaluator != nil {
+		if !h.affectsApproval(event, evalCtx.Config.Config) {
+			logger.Debug().Msg("Skipping evaluation because this comment does not impact approval")
+			return nil
+		}
+
+		result, err := evalCtx.EvaluatePolicy(ctx, evaluator)
+		if err != nil {
+			return err
+		}
+
+		evalCtx.RunPostEvaluateActions(ctx, result, common.TriggerComment)
 	}
 
-	if !h.affectsApproval(event, evalCtx.Config.Config) {
-		logger.Debug().Msg("Skipping evaluation because this comment does not impact approval")
-		return nil
-	}
-
-	result, err := evalCtx.EvaluatePolicy(ctx, evaluator)
-	if err != nil {
-		return err
-	}
-
-	evalCtx.RunPostEvaluateActions(ctx, result, common.TriggerComment)
+	h.evaluateStackDestination(ctx, evalCtx, common.TriggerComment)
 	return nil
 }
 

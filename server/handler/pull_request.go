@@ -44,7 +44,7 @@ func (h *PullRequest) Handle(ctx context.Context, eventType, deliveryID string, 
 
 	var t common.Trigger
 	switch event.GetAction() {
-	case "opened", "reopened", "ready_for_review":
+	case "opened", "reopened", "ready_for_review", "stacked":
 		t = common.TriggerCommit | common.TriggerPullRequest
 	case "synchronize":
 		t = common.TriggerCommit

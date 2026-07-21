@@ -139,6 +139,26 @@ type Context interface {
 	Labels() ([]string, error)
 }
 
+// StackInfo describes the GitHub native stack a pull request belongs to.
+type StackInfo struct {
+	// Destination is the branch the whole stack merges into, that is the base
+	// of the bottom pull request.
+	Destination string
+	// Position is this pull request's place in the stack, counting from 1 at
+	// the bottom.
+	Position int
+	// Size is the number of pull requests in the stack.
+	Size int
+}
+
+// StackContext is an optional Context extension that reports the native GitHub
+// stack a pull request belongs to.
+type StackContext interface {
+	// Stack returns the native GitHub stack this pull request belongs to, or
+	// nil if the pull request is not part of a stack.
+	Stack() (*StackInfo, error)
+}
+
 type FileStatus int
 
 const (
