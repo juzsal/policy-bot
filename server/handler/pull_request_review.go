@@ -82,6 +82,7 @@ func (h *PullRequestReview) Handle(ctx context.Context, eventType, deliveryID st
 	}
 
 	evalCtx.RunPostEvaluateActions(ctx, result, common.TriggerReview)
+	h.evaluateStackDestination(ctx, evalCtx, common.TriggerReview)
 	return nil
 }
 

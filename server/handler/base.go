@@ -98,5 +98,78 @@ func (b *Base) Evaluate(ctx context.Context, installationID int64, trigger commo
 	if err != nil {
 		return errors.Wrap(err, "failed to create evaluation context")
 	}
-	return evalCtx.Evaluate(ctx, trigger)
+	if err := evalCtx.Evaluate(ctx, trigger); err != nil {
+		return err
+	}
+	b.evaluateStackDestination(ctx, evalCtx, trigger)
+	return nil
+}
+
+// stackDestinationTarget returns the branch to post a destination status for,
+// and false when the pull request is not an upper member of a stack.
+func stackDestinationTarget(opts *PullEvaluationOptions, stack *pull.StackInfo, base string) (string, bool) {
+	if !opts.PostStackDestinationStatus || stack == nil {
+		return "", false
+	}
+	if stack.Destination == "" || stack.Destination == base {
+		return "", false
+	}
+	return stack.Destination, true
+}
+
+// rebasedContext presents a pull request as though it targets base. It overrides
+// the base branch that Branches reports and passes everything else through.
+type rebasedContext struct {
+	pull.Context
+	base string
+}
+
+func (c *rebasedContext) Branches() (string, string) {
+	_, head := c.Context.Branches()
+	return c.base, head
+}
+
+// evaluateStackDestination posts the stack destination status for an upper
+// member of a native stack. It evaluates the pull request as though it targets
+// the destination: the destination branch's policy, with the base seen as the
+// destination. It is a no-op when the option is off or the pull request is not
+// an upper stack member. Failures are logged, not returned.
+func (b *Base) evaluateStackDestination(ctx context.Context, primary *EvalContext, trigger common.Trigger) {
+	if !b.PullOpts.PostStackDestinationStatus {
+		return
+	}
+
+	logger := zerolog.Ctx(ctx)
+
+	sc, ok := primary.PullContext.(pull.StackContext)
+	if !ok {
+		return
+	}
+	stack, err := sc.Stack()
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to load stack info for destination status")
+		return
+	}
+
+	base, _ := primary.PullContext.Branches()
+	destination, ok := stackDestinationTarget(b.PullOpts, stack, base)
+	if !ok {
+		return
+	}
+
+	owner := primary.PullContext.RepositoryOwner()
+	repository := primary.PullContext.RepositoryName()
+
+	destCtx := &EvalContext{
+		Client:      primary.Client,
+		V4Client:    primary.V4Client,
+		Options:     primary.Options,
+		PublicURL:   primary.PublicURL,
+		PullContext: &rebasedContext{Context: primary.PullContext, base: destination},
+		Config:      b.ConfigFetcher.ConfigForRepositoryBranch(ctx, primary.Client, owner, repository, destination),
+		Secondary:   true,
+	}
+	if err := destCtx.EvaluateForStatus(ctx, trigger); err != nil {
+		logger.Error().Err(err).Msg("Failed to evaluate stack destination policy")
+	}
 }

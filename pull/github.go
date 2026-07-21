@@ -959,6 +959,40 @@ func (ghc *GitHubContext) Labels() ([]string, error) {
 	return ghc.labels, nil
 }
 
+func (ghc *GitHubContext) Stack() (*StackInfo, error) {
+	var q struct {
+		Repository struct {
+			PullRequest struct {
+				StackEntry *struct {
+					Position int
+				}
+				Stack *struct {
+					BaseRefName string
+					Size        int
+				}
+			} `graphql:"pullRequest(number: $number)"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+	qvars := map[string]any{
+		"owner":  githubv4.String(ghc.owner),
+		"name":   githubv4.String(ghc.repo),
+		"number": githubv4.Int(ghc.number),
+	}
+	if err := ghc.v4client.Query(ghc.ctx, &q, qvars); err != nil {
+		return nil, errors.Wrap(err, "failed to load stack info")
+	}
+
+	pr := q.Repository.PullRequest
+	if pr.Stack == nil || pr.StackEntry == nil {
+		return nil, nil
+	}
+	return &StackInfo{
+		Destination: pr.Stack.BaseRefName,
+		Position:    pr.StackEntry.Position,
+		Size:        pr.Stack.Size,
+	}, nil
+}
+
 func (ghc *GitHubContext) loadPagedData() error {
 	// This query is tuned to use a single GraphQL rate limit point per
 	// execution. For most PRs, this means loading all commits, comments, and

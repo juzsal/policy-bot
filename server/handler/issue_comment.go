@@ -103,6 +103,7 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 	}
 
 	evalCtx.RunPostEvaluateActions(ctx, result, common.TriggerComment)
+	h.evaluateStackDestination(ctx, evalCtx, common.TriggerComment)
 	return nil
 }
 

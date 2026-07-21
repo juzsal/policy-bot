@@ -60,6 +60,13 @@ type PullEvaluationOptions struct {
 	// context behaviour, and will be removed in 2.0
 	PostInsecureStatusChecks bool `yaml:"post_insecure_status_checks"`
 
+	// PostStackDestinationStatus additionally posts a status named after the
+	// stack destination (for example "policy-bot: main") on the upper members
+	// of a GitHub native stack, evaluated against the destination branch's
+	// policy. This lets GitHub's "merge as a stack" be satisfied. Off by
+	// default.
+	PostStackDestinationStatus bool `yaml:"post_stack_destination_status"`
+
 	// IgnoreEditedComments enables ignoring comments that have been edited when evaluating approval rules.
 	// This provides a server-side option to ignore edited comments across all rules.
 	IgnoreEditedComments *bool `yaml:"ignore_edited_comments"`
@@ -118,6 +125,7 @@ func (p *PullEvaluationOptions) SetValuesFromEnv(prefix string) {
 	setBoolFromEnv("EXPAND_REQUIRED_REVIEWERS", prefix, &p.ExpandRequiredReviewers)
 	setBoolFromEnv("STRICT_REVIEW_DISMISSAL", prefix, &p.StrictReviewDismissal)
 	setBoolFromEnv("POST_INSECURE_STATUS_CHECKS", prefix, &p.PostInsecureStatusChecks)
+	setBoolFromEnv("POST_STACK_DESTINATION_STATUS", prefix, &p.PostStackDestinationStatus)
 	setBoolPtrFromEnv("IGNORE_EDITED_COMMENTS", prefix, &p.IgnoreEditedComments)
 
 	p.setApprovalDefaultsFromEnv(prefix + "APPROVAL_DEFAULTS_")
